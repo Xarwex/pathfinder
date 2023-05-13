@@ -1,40 +1,52 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 
-#[derive(Component)]
-struct Person;
-
-#[derive(Component)]
-struct Name(String);
-
-#[derive(Resource)]
-struct GreetTimer(Timer);
+const GRID_WIDTH: usize = 5;
+const GRID_HEIGHT: usize = 1;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(HelloPlugin)
+        .add_startup_system(setup)
         .run();
 }
 
-fn add_people(mut commands: Commands) {
-    commands.spawn((Person, Name("dupa".into())));
-    commands.spawn((Person, Name("apu".into())));
-}
+fn setup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    // mut game: ResMut<Game>,
+) {
+    commands.spawn(Camera2dBundle::default());
 
-fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
-    if timer.0.tick(time.delta()).just_finished() {
-        for name in &query {
-            println!("hello {}", name.0);
+    let color = materials.add(ColorMaterial::from(Color::GREEN));
+    let quad = meshes.add(Mesh::from(shape::Quad::default()));
+
+    let mut grid = vec![];
+    for height in 0..GRID_HEIGHT {
+        let mut line = vec![];
+        for width in 0..GRID_WIDTH {
+            commands.spawn(MaterialMesh2dBundle {
+                mesh: quad.clone().into(),
+                transform: Transform::default()
+                    .with_scale(Vec3::splat(64.))
+                    .with_translation(Vec3 {
+                        x: (width * 65) as f32,
+                        y: (height * 65) as f32,
+                        z: 0.,
+                    }),
+                material: color.clone(),
+                ..Default::default()
+            });
+            line.push(Block {})
         }
+        grid.push(line);
     }
 }
 
-pub struct HelloPlugin;
-
-impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, TimerMode::Repeating)))
-            .add_startup_system(add_people)
-            .add_system(greet_people);
-    }
+#[derive(Resource, Default)]
+struct Game {
+    grid: Vec<Vec<Block>>,
 }
+
+#[derive(Component)]
+struct Block {}
