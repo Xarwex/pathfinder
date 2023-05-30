@@ -20,7 +20,7 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut game: ResMut<Game>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((Camera2dBundle::default(), RaycastPickCamera::default()));
 
     let color = materials.add(ColorMaterial::from(Color::GREEN));
     let quad = meshes.add(Mesh::from(shape::Quad::default()));
@@ -43,6 +43,8 @@ fn setup(
                     ..Default::default()
                 },
                 Block {},
+                RaycastPickTarget::default(),
+                Pickable,
                 Interaction::default(),
             ));
             // line.push(Block {
@@ -59,7 +61,10 @@ fn click_on_block_system(
     mut clicked: Query<(&Interaction, &mut Transform, &mut Block), Changed<Interaction>>,
 ) {
     for (interaction, mut transform, block) in &mut clicked {
-        println!("{:?}", interaction);
+        if matches!(interaction, Interaction::Clicked) {
+            // rotate the block and change the flow
+            transform.rotate_local_z(1.0);
+        }
     }
 }
 
