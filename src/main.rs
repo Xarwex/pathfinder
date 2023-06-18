@@ -1,17 +1,35 @@
-use bevy::{prelude::*, sprite::MaterialMesh2dBundle, utils::HashSet};
+mod laser;
+use bevy::{
+    prelude::*,
+    render::render_resource::PrimitiveTopology,
+    sprite::{Material2dPlugin, MaterialMesh2dBundle},
+    utils::HashSet,
+};
 use bevy_mod_picking::prelude::*;
+use bevy_rapier2d::{
+    parry::query::Ray,
+    prelude::*,
+    rapier::prelude::{ColliderSet, Point, QueryPipeline, RigidBodySet, Vector},
+};
+use laser::laser_system;
 
-const GRID_WIDTH: isize = 5;
-const GRID_HEIGHT: isize = 3;
+const GRID_WIDTH: isize = 10;
+const GRID_HEIGHT: isize = 5;
 
 fn main() {
+    let mut rigid_body_set = RigidBodySet::new();
+    let mut collider_set = ColliderSet::new();
+
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(DefaultPickingPlugins)
+        .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .add_event::<RotateEvent>()
         .add_startup_system(setup)
         .add_system(click_on_block_system)
         .add_system(resolve_rotation_system)
+        .add_system(laser_system)
         .run();
 }
 
@@ -19,6 +37,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    rapier_context: Res<RapierContext>,
 ) {
     commands.spawn((Camera2dBundle::default(), RaycastPickCamera::default()));
 
@@ -31,7 +50,7 @@ fn setup(
                 MaterialMesh2dBundle {
                     mesh: quad.clone().into(),
                     transform: Transform::default()
-                        .with_scale(Vec3::splat(64.))
+                        .with_scale(Vec3::new(60., 10., 1.))
                         .with_translation(Vec3 {
                             x: (x * 65) as f32,
                             y: (y * 65) as f32,
@@ -40,6 +59,7 @@ fn setup(
                     material: color.clone(),
                     ..Default::default()
                 },
+                Collider::cuboid(0.5, 0.5),
                 Block { x, y },
                 RaycastPickTarget::default(),
                 Pickable,
@@ -77,7 +97,7 @@ fn resolve_rotation_system(
 }
 
 #[derive(Component, Clone, Copy, PartialEq, Eq, Hash)]
-struct Block {
+pub struct Block {
     x: isize,
     y: isize,
 }
@@ -100,4 +120,4 @@ impl Block {
     }
 }
 
-struct RotateEvent(pub Block);
+pub struct RotateEvent(pub Block);
