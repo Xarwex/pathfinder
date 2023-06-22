@@ -59,7 +59,8 @@ fn setup(
                     material: color.clone(),
                     ..Default::default()
                 },
-                Collider::cuboid(0.5, 0.5),
+                // add colision group and make it collide only with it
+                Collider::cuboid(0.6, 0.6),
                 Block { x, y },
                 RaycastPickTarget::default(),
                 Pickable,

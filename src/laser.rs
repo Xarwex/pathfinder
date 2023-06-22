@@ -33,24 +33,35 @@ pub fn spawn_laser(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     rapier_context: Res<RapierContext>,
-    origin: Vect,
-    direction: Vect,
+    mut origin: Vect,
+    mut direction: Vect,
 ) {
     let max_toi = 1000.;
-    let filter = QueryFilter::default();
+    let filter = QueryFilter::new();
     let solid = true;
     let mut points = vec![origin];
-    if let Some((entity, intersection)) =
-        rapier_context.cast_ray_and_get_normal(origin, direction, max_toi, solid, filter)
-    {
-        let hit_point = intersection.point;
-        println!("{}", hit_point);
-        let hit_normal = intersection.normal;
-        // reflect direction
-        let reflection = direction - 2.0 * hit_normal.dot(direction) * hit_normal;
-        points.push(hit_point);
-        points.push(hit_normal * 10000.0);
-    };
+    direction = direction.normalize();
+    for i in 0..100 {
+        if let Some((entity, intersection)) =
+            rapier_context.cast_ray_and_get_normal(origin, direction, max_toi, solid, filter)
+        {
+            println!("{}", i);
+            let hit_point = intersection.point;
+            let hit_normal = intersection.normal;
+            // reflect direction
+            let reflection = direction - 2.0 * hit_normal.dot(direction) * hit_normal;
+            // fucked reflections cause we hit the collider and the bounce within it due to maths
+            // being totally dumb
+            println!(
+                "reflection - {}, direction - {}, hit point - {}, origin - {}",
+                reflection, direction, hit_point, origin
+            );
+            points.push(hit_point);
+            origin = hit_point;
+            direction = reflection.normalize();
+        }
+    }
+    points.push(direction * 10.0);
     let polygonal_chain = meshes.add(Mesh::from(PolygonalChain::new(points)));
     let laser_color = materials.add(ColorMaterial::from(Color::RED));
     commands.spawn((
