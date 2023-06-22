@@ -38,15 +38,18 @@ pub fn spawn_laser(
 ) {
     let max_toi = 1000.;
     let filter = QueryFilter::default();
-    let solid = false;
-    let mut points = vec![Vec2::new(0., 0.), origin];
+    let solid = true;
+    let mut points = vec![origin];
     if let Some((entity, intersection)) =
         rapier_context.cast_ray_and_get_normal(origin, direction, max_toi, solid, filter)
     {
         let hit_point = intersection.point;
         println!("{}", hit_point);
         let hit_normal = intersection.normal;
+        // reflect direction
+        let reflection = direction - 2.0 * hit_normal.dot(direction) * hit_normal;
         points.push(hit_point);
+        points.push(hit_normal * 10000.0);
     };
     let polygonal_chain = meshes.add(Mesh::from(PolygonalChain::new(points)));
     let laser_color = materials.add(ColorMaterial::from(Color::RED));
