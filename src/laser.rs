@@ -1,4 +1,4 @@
-use crate::RotateEvent;
+use crate::{RedrawLaserEvent, RotateEvent, HALF_HEIGHT, HALF_SCALE, HALF_WIDTH, SCALE};
 use bevy::{prelude::*, render::render_resource::PrimitiveTopology, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 
@@ -41,27 +41,17 @@ pub fn spawn_laser(
     let solid = true;
     let mut points = vec![origin];
     direction = direction.normalize();
-    for i in 0..100 {
-        if let Some((entity, intersection)) =
-            rapier_context.cast_ray_and_get_normal(origin, direction, max_toi, solid, filter)
-        {
-            println!("{}", i);
-            let hit_point = intersection.point;
-            let hit_normal = intersection.normal;
-            // reflect direction
-            let reflection = direction - 2.0 * hit_normal.dot(direction) * hit_normal;
-            // fucked reflections cause we hit the collider and the bounce within it due to maths
-            // being totally dumb
-            println!(
-                "reflection - {}, direction - {}, hit point - {}, origin - {}",
-                reflection, direction, hit_point, origin
-            );
-            points.push(hit_point);
-            origin = hit_point;
-            direction = reflection.normalize();
-        }
+    while let Some((entity, intersection)) =
+        rapier_context.cast_ray_and_get_normal(origin, direction, max_toi, solid, filter)
+    {
+        let hit_point = intersection.point;
+        let hit_normal = intersection.normal;
+        let reflection = direction - 2. * hit_normal.dot(direction) * hit_normal;
+        points.push(hit_point);
+        direction = reflection.normalize();
+        origin = hit_point + direction; // Offset fucked maths
     }
-    points.push(direction * 10.0);
+    points.push(origin + (direction * max_toi));
     let polygonal_chain = meshes.add(Mesh::from(PolygonalChain::new(points)));
     let laser_color = materials.add(ColorMaterial::from(Color::RED));
     commands.spawn((
@@ -75,6 +65,7 @@ pub fn spawn_laser(
 }
 
 pub fn laser_system(
+    mut ev_redraw: EventReader<RedrawLaserEvent>,
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -89,8 +80,11 @@ pub fn laser_system(
         meshes,
         materials,
         rapier_context,
-        Vec2::new(-60., -100.),
-        Vec2::new(1.0, 1.0),
+        Vec2::new(
+            (-SCALE * (HALF_WIDTH + 1)) as f32,
+            (-SCALE * HALF_HEIGHT) as f32,
+        ),
+        Vec2::new(1.0, 0.),
     );
 }
 
