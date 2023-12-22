@@ -1,4 +1,5 @@
-use crate::{RedrawLaserEvent, RotateEvent, HALF_HEIGHT, HALF_SCALE, HALF_WIDTH, SCALE};
+use crate::constants;
+use crate::RedrawLaserEvent;
 use bevy::{prelude::*, render::render_resource::PrimitiveTopology, sprite::MaterialMesh2dBundle};
 use bevy_rapier2d::prelude::*;
 
@@ -81,8 +82,8 @@ pub fn laser_system(
         materials,
         rapier_context,
         Vec2::new(
-            (-SCALE * (HALF_WIDTH + 1)) as f32,
-            (-SCALE * HALF_HEIGHT) as f32,
+            (-constants::SCALE * (constants::HALF_WIDTH + 1)) as f32,
+            (-constants::SCALE * constants::HALF_HEIGHT) as f32,
         ),
         Vec2::new(1.0, 0.),
     );
