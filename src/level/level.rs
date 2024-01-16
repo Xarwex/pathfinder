@@ -32,7 +32,9 @@ use crate::constants;
 ///
 /// is the solution here
 pub fn read_level_from_file(file: &Path) -> Result<Level, LevelCreationError> {
-    let x = String::from_utf8(std::fs::read(file).unwrap()).unwrap();
+    let x = String::from_utf8(std::fs::read(file).unwrap())
+        .unwrap()
+        .replace("\r", "");
     let level_vec: Vec<&str> = x.split('\n').collect();
 
     if level_vec.len() < 3 {
